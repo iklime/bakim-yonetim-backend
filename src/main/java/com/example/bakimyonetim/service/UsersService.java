@@ -8,4 +8,6 @@ public interface UsersService {
     List<Users> findAll();
     Users findById(Long id);
     void delete(Long id);
+
+    Users update(Long id, Users user);
 }

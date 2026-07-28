@@ -2,50 +2,34 @@ package com.example.bakimyonetim.controller;
 
 import com.example.bakimyonetim.dto.AuthResponse;
 import com.example.bakimyonetim.dto.LoginRequest;
-import com.example.bakimyonetim.entity.Users;
-import com.example.bakimyonetim.repository.UsersRepository;
-import com.example.bakimyonetim.security.JwtService;
+import com.example.bakimyonetim.dto.RegisterRequest; // KENDİN OLUŞTURACAKSIN
+import com.example.bakimyonetim.service.AuthService; // KENDİN OLUŞTURACAKSIN
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
 
+    // Artık Repository veya PasswordEncoder'ı Controller'da çağırmıyoruz!
+    // Tüm yükü AuthService'e devrediyoruz.
     @Autowired
-    private AuthenticationManager authenticationManager;
-
-    @Autowired
-    private UsersRepository usersRepository;
-
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-
-    @Autowired
-    private JwtService jwtService;
+    private AuthService authService;
 
     @PostMapping("/register")
-    public Users register(@RequestBody Users user) {
-        user.setSifre(passwordEncoder.encode(user.getSifre()));
-        return usersRepository.save(user);
+    public ResponseEntity<String> register(@Valid @RequestBody RegisterRequest request) {
+        // Doğrudan Users entity'si değil, güvenli RegisterRequest DTO'su alıyoruz
+        authService.register(request);
+        return new ResponseEntity<>("Kullanıcı başarıyla kaydedildi.", HttpStatus.CREATED);
     }
 
     @PostMapping("/login")
-    public AuthResponse login(@RequestBody LoginRequest request) {
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getSifre())
-        );
-
-        Users user = usersRepository.findAll().stream()
-                .filter(u -> u.getEmail().equals(request.getEmail()))
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
-
-        String token = jwtService.generateToken(user.getEmail(), user.getRol().name());
-
-        return new AuthResponse(token, user.getEmail(), user.getRol().name());
+    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
+        // Tüm kimlik doğrulama ve token üretme işi Servis'te yapılıyor
+        AuthResponse response = authService.login(request);
+        return ResponseEntity.ok(response);
     }
 }

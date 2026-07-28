@@ -6,6 +6,14 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+
+import java.time.LocalDateTime;
+import java.util.Collection;
+import java.util.List;
 
 @Entity
 @Table(name = "users")
@@ -13,11 +21,23 @@ import lombok.AllArgsConstructor;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class Users implements org.springframework.security.core.userdetails.UserDetails {
+@Builder
+public class Users implements UserDetails {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "entity_id", nullable = false)
+    private FactoryEntity factoryEntity;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "department_id")
+    private Department department;
+
+    @Column(name = "kullanici_kodu", unique = true, nullable = false, length = 50)
+    private String kullaniciKodu;
 
     @Column(nullable = false, length = 100)
     private String ad;
@@ -35,9 +55,20 @@ public class Users implements org.springframework.security.core.userdetails.User
     @Column(nullable = false)
     private UserRole rol;
 
+    @Column(name = "verification_code", length = 10)
+    private String verificationCode;
+
+    @Column(name = "is_active")
+    @Builder.Default
+    private Boolean isActive = true;
+
+    @Column(name = "olusturma_tarihi", updatable = false)
+    @Builder.Default
+    private LocalDateTime olusturmaTarihi = LocalDateTime.now();
+
     @Override
-    public java.util.Collection<? extends org.springframework.security.core.GrantedAuthority> getAuthorities() {
-        return java.util.List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_" + rol.name()));
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return List.of(new SimpleGrantedAuthority("ROLE_" + rol.name()));
     }
 
     @Override
@@ -47,6 +78,9 @@ public class Users implements org.springframework.security.core.userdetails.User
 
     @Override
     public String getUsername() {
+        // Not: Tezdeki mimari gereği kullanıcı önce 'kullaniciKodu' girer, ardından mail'e kod gider.
+        // Spring Security akışında bunu email veya kullaniciKodu olarak yönetebilirsiniz.
+        // Şimdilik e-posta olarak bırakıldı.
         return email;
     }
 
@@ -67,6 +101,11 @@ public class Users implements org.springframework.security.core.userdetails.User
 
     @Override
     public boolean isEnabled() {
-        return true;
+        return this.isActive != null ? this.isActive : false;
     }
+
+    public String getAdSoyad() {
+        return ad + " " + soyad;
+    }
+
 }

@@ -2,8 +2,8 @@ package com.example.bakimyonetim.security;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
@@ -13,11 +13,12 @@ import java.util.function.Function;
 @Component
 public class JwtService {
 
-    // Bu anahtar token'ları imzalamak için kullanılıyor - gerçek projede application.properties'ten okunmalı
-    private static final String SECRET_KEY = "bakimYonetimSistemiCokGizliBirAnahtarBuOlmaliEnAz32Karakter";
+    // Gizli anahtarı application.properties'ten güvenli bir şekilde çekiyoruz
+    @Value("${jwt.secret:bakimYonetimSistemiCokGizliBirAnahtarBuOlmaliEnAz32Karakter}")
+    private String secretKey;
 
     private SecretKey getSigningKey() {
-        return Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
+        return Keys.hmacShaKeyFor(secretKey.getBytes());
     }
 
     // Token üretme
@@ -27,7 +28,7 @@ public class JwtService {
                 .claim("rol", rol)
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 10)) // 10 saat geçerli
-                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
+                .signWith(getSigningKey()) // Modern JJWT standardı
                 .compact();
     }
 

@@ -1,5 +1,5 @@
 package com.example.bakimyonetim.enums;
 
 public enum PriorityLevel {
-    DUSUK, ORTA, YUKSEK, KRITIK
+    NORMAL, ACIL, COK_ACIL
 }

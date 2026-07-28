@@ -10,7 +10,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -27,13 +26,13 @@ public class BreakdownReportServiceImpl implements BreakdownReportService {
     private BreakdownPartUsedRepository breakdownPartUsedRepository;
 
     @Autowired
-    private MaintenanceCostRepository maintenanceCostRepository;
-
-    @Autowired
     private MaintenanceRecordRepository maintenanceRecordRepository;
 
     @Autowired
     private UsersRepository usersRepository;
+
+    @Autowired
+    private BreakdownEmployeeLogRepository breakdownEmployeeLogRepository;
 
     @Override
     public BreakdownReport save(BreakdownReport report) {
@@ -58,29 +57,30 @@ public class BreakdownReportServiceImpl implements BreakdownReportService {
         // 1. Arıza kaydını bul
         BreakdownReport report = findById(breakdownId);
 
-        // 2. Stoktan parça düş
-        StockItem stockItem = stockItemRepository.findById(request.getStockItemId())
-                .orElseThrow(() -> new RuntimeException("Stok kalemi bulunamadı: " + request.getStockItemId()));
+        // 2. Stoktan parça düş (Null kontrolü ile güvenli)
+        if (request.getStockItemId() != null && request.getKullanilanMiktar() != null && request.getKullanilanMiktar() > 0) {
+            StockItem stockItem = stockItemRepository.findById(request.getStockItemId())
+                    .orElseThrow(() -> new RuntimeException("Stok kalemi bulunamadı: " + request.getStockItemId()));
 
-        if (stockItem.getMiktar() < request.getKullanilanMiktar()) {
-            throw new RuntimeException("Yetersiz stok: " + stockItem.getParcaAdi());
+            if (stockItem.getMiktar() < request.getKullanilanMiktar()) {
+                throw new RuntimeException("Yetersiz stok: " + stockItem.getParcaAdi());
+            }
+
+            stockItem.setMiktar(stockItem.getMiktar() - request.getKullanilanMiktar());
+            stockItemRepository.save(stockItem);
+
+            // 3. Kritik stok kontrolü
+            if (stockItem.getMiktar() <= stockItem.getKritikSeviye()) {
+                System.out.println("UYARI: " + stockItem.getParcaAdi() + " kritik stok seviyesinin altına düştü! Kalan: " + stockItem.getMiktar());
+            }
+
+            // 4. Kullanılan parça kaydı oluştur
+            BreakdownPartUsed partUsed = new BreakdownPartUsed();
+            partUsed.setBreakdownReport(report);
+            partUsed.setStockItem(stockItem);
+            partUsed.setKullanilanMiktar(request.getKullanilanMiktar());
+            breakdownPartUsedRepository.save(partUsed);
         }
-
-        stockItem.setMiktar(stockItem.getMiktar() - request.getKullanilanMiktar());
-        stockItemRepository.save(stockItem);
-
-        // 3. Kritik stok kontrolü
-        if (stockItem.getMiktar() <= stockItem.getKritikSeviye()) {
-            System.out.println("UYARI: " + stockItem.getParcaAdi() + " kritik stok seviyesinin altına düştü! Kalan: " + stockItem.getMiktar());
-            // İleride burada email/bildirim servisi çağrılacak
-        }
-
-        // 4. Kullanılan parça kaydı oluştur
-        BreakdownPartUsed partUsed = new BreakdownPartUsed();
-        partUsed.setBreakdownReport(report);
-        partUsed.setStockItem(stockItem);
-        partUsed.setKullanilanMiktar(request.getKullanilanMiktar());
-        breakdownPartUsedRepository.save(partUsed);
 
         // 5. Bakım kaydı oluştur (arıza giderme tipi)
         MaintenanceRecord maintenanceRecord = new MaintenanceRecord();
@@ -89,23 +89,22 @@ public class BreakdownReportServiceImpl implements BreakdownReportService {
         maintenanceRecord.setTip(MaintenanceType.ARIZA_GIDERME);
         maintenanceRecord.setAciklama(request.getAciklama());
 
+        Users teknisyen = null;
         if (request.getTeknisyenId() != null) {
-            Users teknisyen = usersRepository.findById(request.getTeknisyenId())
+            teknisyen = usersRepository.findById(request.getTeknisyenId())
                     .orElseThrow(() -> new RuntimeException("Teknisyen bulunamadı: " + request.getTeknisyenId()));
             maintenanceRecord.setTeknisyen(teknisyen);
         }
 
         maintenanceRecordRepository.save(maintenanceRecord);
 
-        // 6. Maliyet hesapla ve kaydet
-        BigDecimal parcaMaliyeti = stockItem.getBirimFiyat()
-                .multiply(BigDecimal.valueOf(request.getKullanilanMiktar()));
-
-        MaintenanceCost cost = new MaintenanceCost();
-        cost.setMaintenanceRecord(maintenanceRecord);
-        cost.setParcaMaliyeti(parcaMaliyeti);
-        cost.setIscilikMaliyeti(request.getIscilikMaliyeti() != null ? request.getIscilikMaliyeti() : BigDecimal.ZERO);
-        maintenanceCostRepository.save(cost);
+        // 6. Arızada görev alan personeli logla (BreakdownEmployeeLog)
+        if (teknisyen != null) {
+            BreakdownEmployeeLog employeeLog = new BreakdownEmployeeLog();
+            employeeLog.setBreakdownReport(report);
+            employeeLog.setKullanici(teknisyen);
+            breakdownEmployeeLogRepository.save(employeeLog);
+        }
 
         // 7. Arıza durumunu güncelle
         report.setDurum(ReportStatus.COZULDU);

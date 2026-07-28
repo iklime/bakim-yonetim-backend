@@ -1,6 +1,7 @@
 package com.example.bakimyonetim.service;
 
 import com.example.bakimyonetim.entity.MaintenanceRecord;
+
 import java.util.List;
 
 public interface MaintenanceRecordService {

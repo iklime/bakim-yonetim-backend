@@ -6,14 +6,17 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
+
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "maintenance_record")
+@Table(name = "maintenance_records")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class MaintenanceRecord {
 
     @Id
@@ -21,19 +24,20 @@ public class MaintenanceRecord {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ekipman_id", nullable = false)
+    @JoinColumn(name = "equipment_id", nullable = false)
     private Equipment equipment;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "teknisyen_id")
+    @JoinColumn(name = "user_id")
     private Users teknisyen;
 
     @Column(nullable = false)
     private LocalDateTime tarih;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private MaintenanceType tip;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(length = 1000)
     private String aciklama;
 }

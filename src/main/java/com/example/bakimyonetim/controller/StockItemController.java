@@ -2,7 +2,9 @@ package com.example.bakimyonetim.controller;
 
 import com.example.bakimyonetim.entity.StockItem;
 import com.example.bakimyonetim.service.StockItemService;
+import jakarta.validation.Valid; // Gerekli import
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize; // Gerekli import
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -15,7 +17,7 @@ public class StockItemController {
     private StockItemService stockItemService;
 
     @PostMapping
-    public StockItem create(@RequestBody StockItem stockItem) {
+    public StockItem create(@Valid @RequestBody StockItem stockItem) { // @Valid eklendi
         return stockItemService.save(stockItem);
     }
 
@@ -30,10 +32,11 @@ public class StockItemController {
     }
 
     @PutMapping("/{id}")
-    public StockItem update(@PathVariable Long id, @RequestBody StockItem stockItem) {
+    public StockItem update(@PathVariable Long id, @Valid @RequestBody StockItem stockItem) { // @Valid eklendi
         return stockItemService.update(id, stockItem);
     }
 
+    @PreAuthorize("hasRole('ADMIN')") // Silme işlemi sadece ADMIN yetkisine indirgendi
     @DeleteMapping("/{id}")
     public void delete(@PathVariable Long id) {
         stockItemService.delete(id);

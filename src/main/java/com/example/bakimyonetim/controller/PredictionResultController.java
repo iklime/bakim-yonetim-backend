@@ -4,6 +4,7 @@ import com.example.bakimyonetim.dto.PredictionRequestDto;
 import com.example.bakimyonetim.entity.PredictionResult;
 import com.example.bakimyonetim.service.PredictionResultService;
 import com.example.bakimyonetim.service.PredictionService;
+import jakarta.validation.Valid; // Gerekli import
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -35,7 +36,8 @@ public class PredictionResultController {
     }
 
     @PostMapping("/generate/{equipmentId}")
-    public PredictionResult generate(@PathVariable Long equipmentId, @RequestBody PredictionRequestDto request) {
+    public PredictionResult generate(@PathVariable Long equipmentId,
+                                     @Valid @RequestBody PredictionRequestDto request) { // @Valid eklendi!
         return predictionService.generatePrediction(
                 equipmentId,
                 request.getTip(),

@@ -34,4 +34,19 @@ public class UsersServiceImpl implements UsersService {
     public void delete(Long id) {
         usersRepository.deleteById(id);
     }
+
+    @Override
+    public Users update(Long id, Users user) {
+        Users mevcut = findById(id);
+        mevcut.setAd(user.getAd());
+        mevcut.setSoyad(user.getSoyad());
+        mevcut.setEmail(user.getEmail());
+        mevcut.setSifre(user.getSifre());
+        mevcut.setKullaniciKodu(user.getKullaniciKodu());
+        mevcut.setRol(user.getRol());
+        mevcut.setIsActive(user.getIsActive());
+        mevcut.setDepartment(user.getDepartment());
+        mevcut.setFactoryEntity(user.getFactoryEntity());
+        return usersRepository.save(mevcut);
+    }
 }

@@ -16,9 +16,8 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        return usersRepository.findAll().stream()
-                .filter(u -> u.getEmail().equals(email))
-                .findFirst()
+        // findAll() yerine doğrudan optimize edilmiş repository metodunu kullanıyoruz
+        return usersRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("Kullanıcı bulunamadı: " + email));
     }
 }

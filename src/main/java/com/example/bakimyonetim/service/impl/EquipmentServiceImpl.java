@@ -33,12 +33,15 @@ public class EquipmentServiceImpl implements EquipmentService {
     @Override
     public Equipment update(Long id, Equipment equipment) {
         Equipment mevcut = findById(id);
+        mevcut.setMakineNumarasi(equipment.getMakineNumarasi());
         mevcut.setAd(equipment.getAd());
-        mevcut.setTip(equipment.getTip());
-        mevcut.setKonum(equipment.getKonum());
-        mevcut.setKurulumTarihi(equipment.getKurulumTarihi());
         mevcut.setDurum(equipment.getDurum());
+        mevcut.setKurulumTarihi(equipment.getKurulumTarihi());
         mevcut.setSonBakimTarihi(equipment.getSonBakimTarihi());
+        mevcut.setIsPeriodicTimeCame(equipment.getIsPeriodicTimeCame());
+        mevcut.setPeriodDayLeft(equipment.getPeriodDayLeft());
+        mevcut.setFactoryEntity(equipment.getFactoryEntity());
+        mevcut.setDepartment(equipment.getDepartment());
         return equipmentRepository.save(mevcut);
     }
 

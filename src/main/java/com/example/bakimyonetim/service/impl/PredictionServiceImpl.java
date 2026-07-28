@@ -32,11 +32,9 @@ public class PredictionServiceImpl implements PredictionService {
                                                Double islemSicakligi, Double donusHizi,
                                                Double tork, Double aletAsinmasi) {
 
-        // 1. Ekipmanı bul
         Equipment equipment = equipmentRepository.findById(equipmentId)
                 .orElseThrow(() -> new RuntimeException("Ekipman bulunamadı: " + equipmentId));
 
-        // 2. FastAPI servisine istek gönder
         MlPredictionRequest request = new MlPredictionRequest(
                 tip, havaSicakligi, islemSicakligi, donusHizi, tork, aletAsinmasi
         );
@@ -47,9 +45,8 @@ public class PredictionServiceImpl implements PredictionService {
             throw new RuntimeException("ML servisinden yanıt alınamadı");
         }
 
-        // 3. Sonucu veritabanına kaydet
         PredictionResult result = new PredictionResult();
-        result.setEquipment(equipment);
+        result.setEquipment(String.valueOf(equipment));
         result.setArizaOlasiligi(response.getAriza_olasiligi());
         result.setGuvenSkoru(response.getGuven_skoru());
         result.setOlusturmaTarihi(LocalDateTime.now());

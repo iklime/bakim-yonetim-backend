@@ -3,11 +3,12 @@ package com.example.bakimyonetim.controller;
 import com.example.bakimyonetim.dto.BreakdownCloseRequest;
 import com.example.bakimyonetim.entity.BreakdownReport;
 import com.example.bakimyonetim.service.BreakdownReportService;
+import jakarta.validation.Valid; // Gerekli import
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
 @RequestMapping("/api/breakdown-reports")
@@ -33,7 +34,8 @@ public class BreakdownReportController {
 
     @PreAuthorize("hasAnyRole('ADMIN', 'TEKNISYEN')")
     @PostMapping("/{id}/close")
-    public BreakdownReport close(@PathVariable Long id, @RequestBody BreakdownCloseRequest request) {
+    public BreakdownReport close(@PathVariable Long id,
+                                 @Valid @RequestBody BreakdownCloseRequest request) { // @Valid eklendi!
         return breakdownReportService.closeBreakdown(id, request);
     }
 }
